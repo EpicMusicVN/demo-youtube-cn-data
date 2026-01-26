@@ -39,6 +39,7 @@ HTTP_TIMEOUT=20
 OPENROUTER_TIMEOUT=30
 ANALYSIS_BUDGET_SECONDS=20
 ANALYSIS_THUMBNAILS_MAX=6
+ANALYSIS_THUMBNAILS_PER_GROUP=10
 ```
 
 To skip analysis per request: `/api/inspect?url=...&analysis=0`
@@ -52,6 +53,10 @@ You can control list sizes with:
 VIDEO_FETCH_MAX=50
 VIDEO_OUTPUT_MAX=10
 ```
+
+Thumbnail analysis:
+- Default samples 10 thumbnails from Top Viewed and 10 from Latest.
+- Set `ANALYSIS_THUMBNAILS_PER_GROUP` to change this; or set `ANALYSIS_THUMBNAILS_MAX` to control total.
 
 Shorts detection:
 - `SHORT_MAX_SECONDS` defines short vs long (default 240 seconds) when UUSH is unavailable.

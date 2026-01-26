@@ -7,7 +7,10 @@ from .openrouter import openrouter_generate
 from .video_utils import pick_thumbnail_for_analysis
 
 
-def build_trends_prompt(channel_name, top_videos, latest_videos):
+def build_trends_prompt(channel_name, top_videos, latest_videos, max_items=None):
+    if max_items:
+        top_videos = top_videos[:max_items]
+        latest_videos = latest_videos[:max_items]
     def lines_from(videos):
         lines = []
         for idx, video in enumerate(videos, 1):
@@ -89,24 +92,45 @@ def analyze_trends(channel_name, top_videos_raw, latest_videos_raw, top_videos_f
     )
     deadline = time.monotonic() + max(budget, 5.0)
 
-    prompt = build_trends_prompt(channel_name, top_videos_fmt, latest_videos_fmt)
-
-    max_thumbs = get_int(
-        "ANALYSIS_THUMBNAILS_MAX",
-        get_int("OPENROUTER_THUMBNAILS_MAX", get_int("GEMINI_THUMBNAILS_MAX", 6)),
+    max_thumbs_env = (
+        os.environ.get("ANALYSIS_THUMBNAILS_MAX")
+        or os.environ.get("OPENROUTER_THUMBNAILS_MAX")
+        or os.environ.get("GEMINI_THUMBNAILS_MAX")
     )
-    half = max(1, max_thumbs // 2)
+    if max_thumbs_env is not None:
+        max_thumbs = get_int(
+            "ANALYSIS_THUMBNAILS_MAX",
+            get_int("OPENROUTER_THUMBNAILS_MAX", get_int("GEMINI_THUMBNAILS_MAX", 6)),
+        )
+        per_group = max(1, max_thumbs // 2)
+    else:
+        per_group = get_int("ANALYSIS_THUMBNAILS_PER_GROUP", 10)
 
-    image_items = []
-    image_items.extend(collect_thumbnail_samples(top_videos_raw, "Top", max_items=half, deadline=deadline))
-    image_items.extend(
-        collect_thumbnail_samples(latest_videos_raw, "Latest", max_items=max_thumbs - half, deadline=deadline)
-    )
+    title_sample_max = get_int("ANALYSIS_TITLE_SAMPLE_MAX", 50)
 
-    if time.monotonic() > deadline:
-        return {"enabled": False, "reason": "Analysis timed out before OpenRouter call."}
+    def run_once(sample_max, thumbs_per_group):
+        prompt = build_trends_prompt(channel_name, top_videos_fmt, latest_videos_fmt, max_items=sample_max)
+        image_items = []
+        image_items.extend(
+            collect_thumbnail_samples(top_videos_raw, "Top", max_items=thumbs_per_group, deadline=deadline)
+        )
+        image_items.extend(
+            collect_thumbnail_samples(latest_videos_raw, "Latest", max_items=thumbs_per_group, deadline=deadline)
+        )
+        if time.monotonic() > deadline:
+            return None, "Analysis timed out before OpenRouter call."
+        try:
+            return openrouter_generate(prompt, image_items=image_items), None
+        except RuntimeError as exc:
+            return None, str(exc)
 
-    response_text = openrouter_generate(prompt, image_items=image_items)
+    response_text, error = run_once(title_sample_max, per_group)
+    if response_text is None and error and ("timed out" in error.lower() or "overloaded" in error.lower()):
+        retry_sample_max = min(20, title_sample_max)
+        retry_per_group = min(3, per_group)
+        response_text, error = run_once(retry_sample_max, retry_per_group)
+    if response_text is None:
+        return {"enabled": False, "reason": error or "OpenRouter did not return a response."}
     if not response_text:
         return {"enabled": False, "reason": "OpenRouter did not return a response."}
 
