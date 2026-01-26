@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  youtube-data:
+    build: .
+    container_name: youtube-data
+    env_file: .env
+    ports:
+      - "8081:8080"
+    restart: unless-stopped

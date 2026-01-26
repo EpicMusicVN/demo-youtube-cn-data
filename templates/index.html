@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMVN YouTube Channel Inspector</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <header class="site-header">
+      <div class="brand">EMVN</div>
+      <div class="brand-subtitle">YouTube Channel Inspector</div>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>
+            Analyze YouTube channels in seconds.
+            <span>Paste any channel link.</span>
+          </h1>
+          <p>
+            Fetch channel profile, keywords, top-viewed videos, and latest uploads
+            with enriched metrics for quick evaluation.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <label for="channel-input">Channel URL or handle</label>
+          <div class="input-row">
+            <input
+              id="channel-input"
+              type="text"
+              placeholder="https://www.youtube.com/@Tvbinivideosforcats/featured"
+              autocomplete="off"
+            />
+            <button id="inspect-btn">Inspect</button>
+          </div>
+          <div class="helper-row">
+            <span id="status-text">Ready.</span>
+            <div class="helper-actions">
+              <div class="helper-stack">
+                <button id="copy-json" class="ghost" disabled>Copy JSON</button>
+                <span class="coming-soon placeholder">Coming soon</span>
+              </div>
+              <div class="helper-stack">
+                <button id="airtable-import" class="ghost" disabled>Import to Airtable</button>
+                <span class="coming-soon">Coming soon</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="results hidden">
+        <div class="card channel-card">
+          <div class="channel-header">
+            <div>
+              <h2 id="channel-name">Channel</h2>
+              <p id="channel-meta"></p>
+            </div>
+            <div class="channel-tags" id="channel-tags"></div>
+          </div>
+          <p id="channel-description" class="muted"></p>
+          <div class="stats-grid" id="channel-stats"></div>
+        </div>
+
+        <div class="card metrics-card">
+          <h3>Quick Metrics</h3>
+          <div class="metrics-grid" id="quick-metrics"></div>
+        </div>
+
+        <div class="card analysis-card" id="analysis-card">
+          <div class="analysis-header">
+            <h3>Title & Thumbnail Trends</h3>
+            <span id="analysis-status" class="analysis-status"></span>
+          </div>
+          <div class="analysis-columns">
+            <div>
+              <h4>Titles</h4>
+              <ul id="analysis-titles" class="analysis-list"></ul>
+            </div>
+            <div>
+              <h4>Thumbnails</h4>
+              <ul id="analysis-thumbnails" class="analysis-list"></ul>
+            </div>
+          </div>
+          <div class="analysis-formula">
+            <div>
+              <span>Title formula</span>
+              <p id="analysis-title-formula"></p>
+            </div>
+            <div>
+              <span>Thumbnail formula</span>
+              <p id="analysis-thumb-formula"></p>
+            </div>
+          </div>
+          <p id="analysis-caveats" class="muted"></p>
+        </div>
+
+        <div class="video-section">
+          <div class="section-header">
+            <div>
+              <h3>Top Viewed Videos</h3>
+              <span class="section-note">Top 10 by view count</span>
+            </div>
+            <div class="filter-group" data-section="top">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="long">Long</button>
+              <button class="filter-btn" data-filter="short">Short</button>
+            </div>
+          </div>
+          <div class="video-grid" id="top-videos"></div>
+        </div>
+
+        <div class="video-section">
+          <div class="section-header">
+            <div>
+              <h3>Latest Videos</h3>
+              <span class="section-note">Most recent 10 uploads</span>
+            </div>
+            <div class="filter-group" data-section="latest">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="long">Long</button>
+              <button class="filter-btn" data-filter="short">Short</button>
+            </div>
+          </div>
+          <div class="video-grid" id="latest-videos"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      EMVN Data Lab • Built for rapid channel analysis.
+    </footer>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
