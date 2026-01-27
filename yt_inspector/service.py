@@ -196,10 +196,6 @@ def inspect_channel(target, enable_analysis=True):
 
     latest_video_ids = fetch_latest_videos(uploads_playlist_id, max_results=fetch_max) if uploads_playlist_id else []
 
-    short_max = get_int("SHORT_MAX_SECONDS", 240)
-    if short_max < 1:
-        short_max = 240
-
     use_uush = os.environ.get("USE_UUSH_PLAYLIST", "1") == "1"
     shorts_playlist_id = channel_id_to_playlist(channel_id, prefix="UUSH") if use_uush else None
     shorts_video_ids = []
@@ -307,7 +303,7 @@ def inspect_channel(target, enable_analysis=True):
         "latestShort": latest_short[:output_max],
     }
 
-    if enable_analysis and os.environ.get("OPENROUTER_API_KEY"):
+    if enable_analysis and os.environ.get("VERTEX_API_KEY"):
         try:
             result["analysis"] = analyze_trends(
                 snippet.get("title") or "Channel",

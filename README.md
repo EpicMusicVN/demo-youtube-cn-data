@@ -25,10 +25,19 @@ Create `.env` with:
 
 ```
 YOUTUBE_API_KEY=your_key_here
-OPENROUTER_API_KEY=your_key_here
+VERTEX_API_KEY=your_key_here
 ```
 
-When `OPENROUTER_API_KEY` is provided, the API adds title/thumbnail trend analysis.
+When `VERTEX_API_KEY` is provided, the API adds title/thumbnail trend analysis.
+
+Vertex model configuration (optional):
+
+```
+VERTEX_MODEL=gemini-3-flash-preview
+VERTEX_API_BASE=https://generativelanguage.googleapis.com/v1beta
+VERTEX_PROJECT_ID=your_gcp_project   # if calling Vertex AI endpoints
+VERTEX_LOCATION=us-central1
+```
 
 ## Optional tuning (timeouts)
 
@@ -36,7 +45,7 @@ You can adjust timeouts via env:
 
 ```
 HTTP_TIMEOUT=20
-OPENROUTER_TIMEOUT=30
+VERTEX_TIMEOUT=30
 ANALYSIS_BUDGET_SECONDS=20
 ANALYSIS_THUMBNAILS_MAX=6
 ANALYSIS_THUMBNAILS_PER_GROUP=10
