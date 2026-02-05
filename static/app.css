@@ -205,6 +205,121 @@ button.ghost {
   visibility: hidden;
 }
 
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  background: rgba(61, 85, 127, 0.08);
+  padding: 6px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  padding: 6px 14px;
+  font-size: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  color: var(--emvn-blue);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  background: var(--emvn-blue);
+  color: var(--emvn-white);
+  box-shadow: 0 6px 12px rgba(40, 53, 75, 0.2);
+}
+
+.tab-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tab-content {
+  /* visible by default */
+}
+
+.saved-channel-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--emvn-gray);
+}
+
+.saved-channel-item:last-child {
+  border-bottom: none;
+}
+
+.saved-channel-info h4 {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--emvn-blue);
+}
+
+.saved-channel-info p {
+  margin: 0;
+  font-size: 12px;
+  color: #6a7076;
+}
+
+.saved-channel-delete {
+  background: transparent;
+  border: 1px solid rgba(177, 79, 69, 0.4);
+  color: #b14f45;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.saved-channel-delete:hover {
+  background: rgba(177, 79, 69, 0.1);
+  transform: translateY(-1px);
+}
+
+.saved-channel-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.saved-channel-view {
+  background: transparent;
+  border: 1px solid rgba(61, 85, 127, 0.3);
+  color: var(--emvn-blue);
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.saved-channel-view:hover {
+  background: rgba(61, 85, 127, 0.1);
+  transform: translateY(-1px);
+}
+
+.save-btn {
+  color: var(--emvn-gold);
+  border-color: rgba(187, 154, 118, 0.4);
+}
+
+.save-btn:hover {
+  background: rgba(187, 154, 118, 0.1);
+}
+
+.save-status {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a9c5d;
+}
+
 .results {
   margin-top: 36px;
   display: grid;
@@ -343,6 +458,16 @@ button.ghost {
   font-size: 16px;
   color: var(--emvn-blue);
   margin-top: 6px;
+}
+
+.country-card .stat strong {
+  font-size: 20px;
+  color: var(--emvn-blue);
+}
+
+.avg-view-5-card .stat strong {
+  font-size: 24px;
+  color: var(--emvn-gold);
 }
 
 .video-section {

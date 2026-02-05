@@ -2,7 +2,6 @@ const inputEl = document.getElementById("channel-input");
 const buttonEl = document.getElementById("inspect-btn");
 const statusEl = document.getElementById("status-text");
 const resultsEl = document.getElementById("results");
-const copyBtn = document.getElementById("copy-json");
 
 const channelNameEl = document.getElementById("channel-name");
 const channelMetaEl = document.getElementById("channel-meta");
@@ -19,6 +18,11 @@ const analysisThumbsEl = document.getElementById("analysis-thumbnails");
 const analysisTitleFormulaEl = document.getElementById("analysis-title-formula");
 const analysisThumbFormulaEl = document.getElementById("analysis-thumb-formula");
 const analysisCaveatsEl = document.getElementById("analysis-caveats");
+const countryValueEl = document.getElementById("country-value");
+const avgView5ValueEl = document.getElementById("avg-view-5-value");
+const saveChannelBtn = document.getElementById("save-channel-btn");
+const saveStatusEl = document.getElementById("save-status");
+const savedChannelsListEl = document.getElementById("saved-channels-list");
 
 let latestPayload = null;
 let topData = { all: [], long: [], short: [] };
@@ -90,6 +94,8 @@ function renderChannel(channel) {
   channelStatsEl.appendChild(makeStat("Total Views", formatNumber(stats.viewCount)));
   channelStatsEl.appendChild(makeStat("Total Videos", formatNumber(stats.videoCount)));
 
+  countryValueEl.textContent = channel.country || "-";
+
   channelTagsEl.innerHTML = "";
   const keywords = channel.keywords || [];
   const topics = channel.topics || [];
@@ -132,6 +138,16 @@ function renderMetrics(latest, topViewed) {
   quickMetricsEl.appendChild(makeStat("Avg Views (Latest)", formatNumber(avgLatestViews)));
   quickMetricsEl.appendChild(makeStat("Avg Views (Top)", formatNumber(avgTopViews)));
   quickMetricsEl.appendChild(makeStat("Like Rate (Latest)", `${likeRate.toFixed(2)}%`));
+}
+
+function renderAvgView5(latest) {
+  const slice = latest.slice(0, 5);
+  if (!slice.length) {
+    avgView5ValueEl.textContent = "-";
+    return;
+  }
+  const sum = slice.reduce((acc, v) => acc + Number(v.views || 0), 0);
+  avgView5ValueEl.textContent = formatNumber(Math.round(sum / slice.length));
 }
 
 function renderVideos(container, videos) {
@@ -285,7 +301,7 @@ async function inspectChannel() {
 
   setStatus("Fetching data…");
   buttonEl.disabled = true;
-  copyBtn.disabled = true;
+  saveChannelBtn.disabled = true;
   resultsEl.classList.add("hidden");
 
   try {
@@ -298,6 +314,7 @@ async function inspectChannel() {
     latestPayload = payload;
     renderChannel(payload.channel || {});
     renderMetrics(payload.latest || [], payload.topViewed || []);
+    renderAvgView5(payload.latest || []);
     topData = {
       all: payload.topViewed || [],
       long: payload.topViewedLong || [],
@@ -312,7 +329,8 @@ async function inspectChannel() {
     applyFilter("latest", "all");
     renderAnalysis(payload.analysis);
     resultsEl.classList.remove("hidden");
-    copyBtn.disabled = false;
+    saveChannelBtn.disabled = false;
+    saveStatusEl.classList.add("hidden");
     setStatus("Done.");
   } catch (err) {
     setStatus(err.message || "Something went wrong.", true);
@@ -328,12 +346,133 @@ inputEl.addEventListener("keydown", (event) => {
   }
 });
 
-copyBtn.addEventListener("click", async () => {
-  if (!latestPayload) return;
+function initTabs() {
+  const tabButtons = document.querySelectorAll(".tab-btn");
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.tab;
+      tabButtons.forEach((b) => b.classList.toggle("active", b.dataset.tab === target));
+      document.querySelectorAll(".tab-content").forEach((panel) => {
+        panel.classList.toggle("hidden", panel.dataset.tab !== target);
+      });
+      if (target === "saved") {
+        loadSavedChannels();
+      }
+    });
+  });
+}
+
+async function saveChannel() {
+  if (!latestPayload || !latestPayload.channel) return;
   try {
-    await navigator.clipboard.writeText(JSON.stringify(latestPayload, null, 2));
-    setStatus("JSON copied to clipboard.");
+    await fetch("/api/channels/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(latestPayload),
+    });
+    saveStatusEl.textContent = "Saved!";
+    saveStatusEl.classList.remove("hidden");
+    setTimeout(() => {
+      saveStatusEl.classList.add("hidden");
+    }, 2000);
   } catch (err) {
-    setStatus("Unable to copy JSON.", true);
+    setStatus("Failed to save channel.", true);
   }
-});
+}
+
+async function loadSavedChannels() {
+  try {
+    const response = await fetch("/api/channels/saved");
+    const channels = await response.json();
+    renderSavedList(channels);
+  } catch (err) {
+    savedChannelsListEl.innerHTML = "";
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "Failed to load saved channels.";
+    savedChannelsListEl.appendChild(p);
+  }
+}
+
+function renderSavedList(channels) {
+  savedChannelsListEl.innerHTML = "";
+  if (!channels || !channels.length) {
+    const p = document.createElement("p");
+    p.className = "muted";
+    p.textContent = "No saved channels yet.";
+    savedChannelsListEl.appendChild(p);
+    return;
+  }
+  channels.forEach((ch) => {
+    const item = document.createElement("div");
+    item.className = "saved-channel-item";
+
+    const info = document.createElement("div");
+    info.className = "saved-channel-info";
+
+    const name = document.createElement("h4");
+    name.textContent = ch.name || "Unknown";
+    info.appendChild(name);
+
+    const meta = document.createElement("p");
+    const handle = ch.custom_url ? `@${ch.custom_url.replace("@", "")}` : "";
+    const subs = ch.subscriber_count ? `${formatNumber(ch.subscriber_count)} subs` : "";
+    meta.textContent = [handle, subs].filter(Boolean).join(" • ");
+    info.appendChild(meta);
+
+    const actions = document.createElement("div");
+    actions.className = "saved-channel-actions";
+
+    const viewBtn = document.createElement("button");
+    viewBtn.className = "saved-channel-view";
+    viewBtn.textContent = "View Stats";
+    viewBtn.addEventListener("click", () => viewSavedChannel(ch.full_payload));
+    actions.appendChild(viewBtn);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "saved-channel-delete";
+    delBtn.textContent = "Delete";
+    delBtn.addEventListener("click", () => deleteSavedChannel(ch.channel_id));
+    actions.appendChild(delBtn);
+
+    item.appendChild(info);
+    item.appendChild(actions);
+    savedChannelsListEl.appendChild(item);
+  });
+}
+
+async function deleteSavedChannel(channelId) {
+  try {
+    await fetch(`/api/channels/saved/${channelId}`, { method: "DELETE" });
+    loadSavedChannels();
+  } catch (err) {
+    setStatus("Failed to delete channel.", true);
+  }
+}
+
+function viewSavedChannel(payload) {
+  if (!payload) return;
+  latestPayload = payload;
+  renderChannel(payload.channel || {});
+  renderMetrics(payload.latest || [], payload.topViewed || []);
+  renderAvgView5(payload.latest || []);
+  topData = {
+    all: payload.topViewed || [],
+    long: payload.topViewedLong || [],
+    short: payload.topViewedShort || [],
+  };
+  latestData = {
+    all: payload.latest || [],
+    long: payload.latestLong || [],
+    short: payload.latestShort || [],
+  };
+  applyFilter("top", "all");
+  applyFilter("latest", "all");
+  renderAnalysis(payload.analysis);
+  resultsEl.classList.remove("hidden");
+  saveChannelBtn.disabled = false;
+  saveStatusEl.classList.add("hidden");
+}
+
+saveChannelBtn.addEventListener("click", saveChannel);
+initTabs();
