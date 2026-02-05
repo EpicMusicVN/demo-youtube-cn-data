@@ -33,27 +33,38 @@
           </p>
         </div>
         <div class="hero-panel">
-          <label for="channel-input">Channel URL or handle</label>
-          <div class="input-row">
-            <input
-              id="channel-input"
-              type="text"
-              placeholder="https://www.youtube.com/@Tvbinivideosforcats/featured"
-              autocomplete="off"
-            />
-            <button id="inspect-btn">Inspect</button>
+          <div class="tab-bar">
+            <button class="tab-btn active" data-tab="inspect">Inspect</button>
+            <button class="tab-btn" data-tab="saved">Saved Channels</button>
           </div>
-          <div class="helper-row">
-            <span id="status-text">Ready.</span>
-            <div class="helper-actions">
-              <div class="helper-stack">
-                <button id="copy-json" class="ghost" disabled>Copy JSON</button>
-                <span class="coming-soon placeholder">Coming soon</span>
+          <div class="tab-content" data-tab="inspect">
+            <label for="channel-input">Channel URL or handle</label>
+            <div class="input-row">
+              <input
+                id="channel-input"
+                type="text"
+                placeholder="https://www.youtube.com/@Tvbinivideosforcats/featured"
+                autocomplete="off"
+              />
+              <button id="inspect-btn">Inspect</button>
+            </div>
+            <div class="helper-row">
+              <span id="status-text">Ready.</span>
+              <div class="helper-actions">
+                <div class="helper-stack">
+                  <button id="save-channel-btn" class="ghost save-btn" disabled>Save Channel</button>
+                  <span id="save-status" class="save-status hidden"></span>
+                </div>
+                <div class="helper-stack">
+                  <button id="airtable-import" class="ghost" disabled>Import to Airtable</button>
+                  <span class="coming-soon">Coming soon</span>
+                </div>
               </div>
-              <div class="helper-stack">
-                <button id="airtable-import" class="ghost" disabled>Import to Airtable</button>
-                <span class="coming-soon">Coming soon</span>
-              </div>
+            </div>
+          </div>
+          <div class="tab-content hidden" data-tab="saved">
+            <div id="saved-channels-list">
+              <p class="muted">No saved channels yet.</p>
             </div>
           </div>
         </div>
@@ -75,6 +86,14 @@
         <div class="card metrics-card">
           <h3>Quick Metrics</h3>
           <div class="metrics-grid" id="quick-metrics"></div>
+        </div>
+
+        <div class="card avg-view-5-card" id="avg-view-5-card">
+          <h3>Avg Views (Last 5 Videos)</h3>
+          <div class="stat avg-view-5-stat" id="avg-view-5-stat">
+            <span>Average view count of 5 latest uploads</span>
+            <strong id="avg-view-5-value">-</strong>
+          </div>
         </div>
 
         <div class="card analysis-card" id="analysis-card">
