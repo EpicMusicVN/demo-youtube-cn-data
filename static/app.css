@@ -460,6 +460,11 @@ button.ghost {
   margin-top: 6px;
 }
 
+.country-card .stat strong {
+  font-size: 20px;
+  color: var(--emvn-blue);
+}
+
 .avg-view-5-card .stat strong {
   font-size: 24px;
   color: var(--emvn-gold);

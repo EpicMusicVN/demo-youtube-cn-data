@@ -18,6 +18,7 @@ const analysisThumbsEl = document.getElementById("analysis-thumbnails");
 const analysisTitleFormulaEl = document.getElementById("analysis-title-formula");
 const analysisThumbFormulaEl = document.getElementById("analysis-thumb-formula");
 const analysisCaveatsEl = document.getElementById("analysis-caveats");
+const countryValueEl = document.getElementById("country-value");
 const avgView5ValueEl = document.getElementById("avg-view-5-value");
 const saveChannelBtn = document.getElementById("save-channel-btn");
 const saveStatusEl = document.getElementById("save-status");
@@ -92,6 +93,8 @@ function renderChannel(channel) {
   channelStatsEl.appendChild(makeStat("Subscribers", formatNumber(stats.subscriberCount)));
   channelStatsEl.appendChild(makeStat("Total Views", formatNumber(stats.viewCount)));
   channelStatsEl.appendChild(makeStat("Total Videos", formatNumber(stats.videoCount)));
+
+  countryValueEl.textContent = channel.country || "-";
 
   channelTagsEl.innerHTML = "";
   const keywords = channel.keywords || [];
