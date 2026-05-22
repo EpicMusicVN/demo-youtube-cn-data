@@ -997,3 +997,26 @@ button.ghost {
   font-style: italic;
   color: #8a8f95;
 }
+
+/* Secret page access gate */
+.lock-screen {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.lock-card {
+  max-width: 440px;
+  width: 100%;
+}
+
+.lock-card h2 {
+  margin-top: 0;
+}
+
+.lock-error {
+  margin: 12px 0 0;
+  color: #b14f45;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
