@@ -4,7 +4,7 @@ import time
 
 from flask import Flask, jsonify, render_template, request
 
-from yt_inspector import inspect_channel
+from yt_inspector import inspect_channel, inspect_channel_lean
 from yt_inspector.config import load_dotenv
 from yt_inspector import db
 
@@ -33,6 +33,12 @@ def index():
     return render_template("index.html")
 
 
+# Hidden competitor-analysis page — intentionally not linked from anywhere.
+@app.route("/secret")
+def secret():
+    return render_template("secret.html")
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -43,10 +49,15 @@ def api_inspect():
     target = request.args.get("url", "").strip()
     analysis_param = request.args.get("analysis", "").strip().lower()
     enable_analysis = analysis_param not in ("0", "false", "no", "off")
+    lean_param = request.args.get("lean", "").strip().lower()
+    lean = lean_param in ("1", "true", "yes", "on")
     if not target:
         return jsonify({"error": "Missing url parameter."}), 400
     try:
-        result = inspect_channel(target, enable_analysis=enable_analysis)
+        if lean:
+            result = inspect_channel_lean(target, enable_analysis=enable_analysis)
+        else:
+            result = inspect_channel(target, enable_analysis=enable_analysis)
         return jsonify(result)
     except RuntimeError as exc:
         return jsonify({"error": str(exc)}), 400

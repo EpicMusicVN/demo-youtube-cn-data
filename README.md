@@ -73,6 +73,22 @@ Shorts detection:
 - `latestShort` uses UUSH when available; otherwise duration-based split on uploads.
 - `topViewedShort` uses `videoDuration=short` when allowed and intersects with UUSH when available; otherwise duration-based.
 
+## Secret competitor page
+
+A hidden competitor-analysis page is served at `/secret`. It is intentionally
+**not linked** from anywhere — reachable only by typing the path.
+
+It clones the inspect feature (paste channel link → analyse) but drops the
+Top Viewed / Latest video grids. Instead it surfaces derived competitor
+metrics from the latest ~50 uploads: upload cadence & timing (KST), content
+format (shorts ratio, duration trend, title formulas), engagement (like /
+comment / engagement rates, breakout & underperforming videos) and SEO
+intelligence (top tags, sponsor rate, revenue streams, paid placements).
+
+It calls `/api/inspect?lean=1`, which skips the costly top-viewed `/search`
+calls — roughly 11 quota units per channel. The same `competitorAnalysis`
+block is also included in the normal `/api/inspect` response.
+
 ## Nginx sample
 
 See `deployment/nginx/demo-youtube-data.emvn.co.conf`.
