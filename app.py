@@ -2,7 +2,7 @@
 import os
 import time
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 
 from yt_inspector import inspect_channel, inspect_channel_lean
 from yt_inspector.config import load_dotenv
@@ -27,15 +27,30 @@ def _startup_init():
 
 _startup_init()
 
+# Session signing key — set FLASK_SECRET_KEY in production so sessions stay
+# stable across restarts and across multiple gunicorn workers.
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "cnl-secret-page-session-key")
+
+
+def _secret_access_code():
+    return os.environ.get("SECRET_ACCESS_CODE", "83867979")
+
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-# Hidden competitor-analysis page — intentionally not linked from anywhere.
-@app.route("/secret")
+# Hidden competitor-analysis page — gated by an access code, not linked anywhere.
+@app.route("/secret", methods=["GET", "POST"])
 def secret():
+    if request.method == "POST":
+        if request.form.get("code", "").strip() == _secret_access_code():
+            session["secret_unlocked"] = True
+            return redirect(url_for("secret"))
+        return render_template("secret_locked.html", error="Incorrect access code."), 401
+    if not session.get("secret_unlocked"):
+        return render_template("secret_locked.html", error=None)
     return render_template("secret.html")
 
 
@@ -51,6 +66,9 @@ def api_inspect():
     enable_analysis = analysis_param not in ("0", "false", "no", "off")
     lean_param = request.args.get("lean", "").strip().lower()
     lean = lean_param in ("1", "true", "yes", "on")
+    # The lean endpoint powers /secret — keep it behind the same access gate.
+    if lean and not session.get("secret_unlocked"):
+        return jsonify({"error": "Locked. Open /secret and enter the access code."}), 403
     if not target:
         return jsonify({"error": "Missing url parameter."}), 400
     try:
