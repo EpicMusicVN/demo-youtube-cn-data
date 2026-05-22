@@ -36,7 +36,7 @@ def vertex_generate(prompt, image_items=None):
     if not api_key:
         return None
 
-    model = os.environ.get("VERTEX_MODEL", "gemini-3-flash-preview")
+    model = os.environ.get("VERTEX_MODEL", "gemini-3.5-flash")
     url = _vertex_url(model)
 
     parts = [{"text": prompt}]
