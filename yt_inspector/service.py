@@ -1,6 +1,7 @@
 import os
 
 from .analysis import analyze_trends
+from .competitor_metrics import compute_competitor_metrics
 from .config import load_dotenv, get_int
 from .parsers import parse_input_target, parse_keywords
 from .video_utils import format_video, reorder_videos, split_long_short, is_short_threshold
@@ -149,7 +150,7 @@ def fetch_videos_details(video_ids):
         data = api_get(
             "/videos",
             {
-                "part": "snippet,contentDetails,statistics,topicDetails",
+                "part": "snippet,contentDetails,statistics,topicDetails,paidProductPlacementDetails",
                 "id": ",".join(chunk),
                 "maxResults": len(chunk),
             },
@@ -164,6 +165,33 @@ def channel_id_to_playlist(channel_id, prefix="UU"):
     return prefix + channel_id[2:]
 
 
+def _build_channel_dict(channel_id, channel):
+    """Assemble the public ``channel`` payload shared by both inspect paths."""
+    snippet = channel.get("snippet", {})
+    branding = channel.get("brandingSettings", {}).get("channel", {})
+    stats = channel.get("statistics", {})
+    topic = channel.get("topicDetails", {})
+    keywords_raw = branding.get("keywords", "")
+    return {
+        "id": channel_id,
+        "name": snippet.get("title"),
+        "description": snippet.get("description"),
+        "customUrl": snippet.get("customUrl"),
+        "publishedAt": snippet.get("publishedAt"),
+        "country": snippet.get("country"),
+        "keywordsRaw": keywords_raw,
+        "keywords": parse_keywords(keywords_raw),
+        "topics": topic.get("topicCategories", []),
+        "statistics": {
+            "viewCount": stats.get("viewCount"),
+            "subscriberCount": stats.get("subscriberCount"),
+            "videoCount": stats.get("videoCount"),
+            "hiddenSubscriberCount": stats.get("hiddenSubscriberCount"),
+        },
+        "bannerUrl": branding.get("image", {}).get("bannerExternalUrl"),
+    }
+
+
 def inspect_channel(target, enable_analysis=True):
     load_dotenv()
     channel_id = resolve_channel_id(target)
@@ -175,15 +203,8 @@ def inspect_channel(target, enable_analysis=True):
         raise RuntimeError("Channel not found or not accessible.")
 
     snippet = channel.get("snippet", {})
-    branding = channel.get("brandingSettings", {}).get("channel", {})
-    stats = channel.get("statistics", {})
-    topic = channel.get("topicDetails", {})
     content = channel.get("contentDetails", {})
-
     uploads_playlist_id = content.get("relatedPlaylists", {}).get("uploads")
-
-    keywords_raw = branding.get("keywords", "")
-    keywords = parse_keywords(keywords_raw)
 
     fetch_max = get_int("VIDEO_FETCH_MAX", 50)
     if fetch_max > 50:
@@ -276,31 +297,17 @@ def inspect_channel(target, enable_analysis=True):
     top_short = sort_by_views(unique_by_id(top_short_candidates))
     top_long = sort_by_views(unique_by_id(top_long_candidates))
 
+    channel_data = _build_channel_dict(channel_id, channel)
+    competitor = compute_competitor_metrics(channel_data, latest_formatted)
     result = {
-        "channel": {
-            "id": channel_id,
-            "name": snippet.get("title"),
-            "description": snippet.get("description"),
-            "customUrl": snippet.get("customUrl"),
-            "publishedAt": snippet.get("publishedAt"),
-            "country": snippet.get("country"),
-            "keywordsRaw": keywords_raw,
-            "keywords": keywords,
-            "topics": topic.get("topicCategories", []),
-            "statistics": {
-                "viewCount": stats.get("viewCount"),
-                "subscriberCount": stats.get("subscriberCount"),
-                "videoCount": stats.get("videoCount"),
-                "hiddenSubscriberCount": stats.get("hiddenSubscriberCount"),
-            },
-            "bannerUrl": branding.get("image", {}).get("bannerExternalUrl"),
-        },
+        "channel": channel_data,
         "topViewed": top_formatted[:output_max],
         "latest": latest_formatted[:output_max],
         "topViewedLong": top_long[:output_max],
         "topViewedShort": top_short[:output_max],
         "latestLong": latest_long[:output_max],
         "latestShort": latest_short[:output_max],
+        "competitorAnalysis": competitor,
     }
 
     if enable_analysis and os.environ.get("VERTEX_API_KEY"):
@@ -311,6 +318,63 @@ def inspect_channel(target, enable_analysis=True):
                 latest_videos,
                 top_formatted,
                 latest_formatted,
+                metrics=competitor,
+            )
+        except RuntimeError as exc:
+            result["analysis"] = {"enabled": False, "error": str(exc)}
+
+    return result
+
+
+def inspect_channel_lean(target, enable_analysis=True):
+    """Lean inspect powering the hidden /secret competitor page.
+
+    Skips the costly top-viewed ``/search`` calls and the UUSH playlist — only
+    channel details + latest uploads are fetched (~11 quota units). Returns the
+    channel payload plus the full competitor-analysis block.
+    """
+    load_dotenv()
+    channel_id = resolve_channel_id(target)
+    if not channel_id:
+        raise RuntimeError("Could not resolve channel ID from input.")
+
+    channel = fetch_channel_details(channel_id)
+    if not channel:
+        raise RuntimeError("Channel not found or not accessible.")
+
+    content = channel.get("contentDetails", {})
+    uploads_playlist_id = content.get("relatedPlaylists", {}).get("uploads")
+
+    fetch_max = get_int("VIDEO_FETCH_MAX", 50)
+    if fetch_max > 50:
+        fetch_max = 50
+    if fetch_max < 10:
+        fetch_max = 10
+
+    latest_video_ids = (
+        fetch_latest_videos(uploads_playlist_id, max_results=fetch_max)
+        if uploads_playlist_id else []
+    )
+    latest_videos = fetch_videos_details(latest_video_ids)
+    latest_formatted = [format_video(v) for v in reorder_videos(latest_video_ids, latest_videos)]
+
+    channel_data = _build_channel_dict(channel_id, channel)
+    competitor = compute_competitor_metrics(channel_data, latest_formatted)
+    result = {
+        "channel": channel_data,
+        "competitorAnalysis": competitor,
+    }
+
+    if enable_analysis and os.environ.get("VERTEX_API_KEY"):
+        try:
+            # No top-viewed list in lean mode: AI analyses the latest uploads only.
+            result["analysis"] = analyze_trends(
+                channel_data.get("name") or "Channel",
+                [],
+                latest_videos,
+                [],
+                latest_formatted,
+                metrics=competitor,
             )
         except RuntimeError as exc:
             result["analysis"] = {"enabled": False, "error": str(exc)}

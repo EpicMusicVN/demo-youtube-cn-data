@@ -36,7 +36,7 @@ def vertex_generate(prompt, image_items=None):
     if not api_key:
         return None
 
-    model = os.environ.get("VERTEX_MODEL", "gemini-3-flash-preview")
+    model = os.environ.get("VERTEX_MODEL", "gemini-3.5-flash")
     url = _vertex_url(model)
 
     parts = [{"text": prompt}]
@@ -58,7 +58,9 @@ def vertex_generate(prompt, image_items=None):
         "contents": [{"role": "user", "parts": parts}],
         "generationConfig": {
             "temperature": 0.2,
-            "maxOutputTokens": 2048,
+            # Gemini 3.x are reasoning models — internal thinking shares this
+            # budget, so it must be generous enough to also fit the JSON answer.
+            "maxOutputTokens": 8192,
             "responseMimeType": "application/json",
         },
     }

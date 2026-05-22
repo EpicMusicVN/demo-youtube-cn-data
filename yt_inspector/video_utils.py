@@ -47,6 +47,9 @@ def format_video(item):
         "channelId": snippet.get("channelId"),
         "channelTitle": snippet.get("channelTitle"),
         "topics": topic.get("topicCategories", []),
+        "hasPaidProductPlacement": item.get("paidProductPlacementDetails", {}).get(
+            "hasPaidProductPlacement", False
+        ),
     }
 
 

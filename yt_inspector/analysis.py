@@ -2,47 +2,11 @@ import json
 import os
 import time
 
+from .analysis_prompt import build_trends_prompt, summarize_metrics
 from .config import get_float, get_int
 from .media import fetch_url_bytes
 from .vertex_ai import vertex_generate
 from .video_utils import pick_thumbnail_for_analysis
-
-
-def build_trends_prompt(channel_name, top_videos, latest_videos, max_items=None, strict=False):
-    if max_items:
-        top_videos = top_videos[:max_items]
-        latest_videos = latest_videos[:max_items]
-
-    def lines_from(videos):
-        lines = []
-        for idx, video in enumerate(videos, 1):
-            title = video.get("title") or "Untitled"
-            views = video.get("views") or "0"
-            published = video.get("publishedAt") or "unknown date"
-            lines.append(f"{idx}. {title} | {views} views | {published}")
-        return "\n".join(lines)
-
-    instruction = (
-        "You are a YouTube strategist. Analyze patterns in titles and thumbnails.\n"
-        "Return ONLY valid JSON with keys:\n"
-        "- titleTrends (array of 3-6 bullet strings)\n"
-        "- thumbnailTrends (array of 3-6 bullet strings)\n"
-        "- titleFormula (string)\n"
-        "- thumbnailFormula (string)\n"
-        "- caveats (string, optional)\n"
-    )
-    if strict:
-        instruction += "Return a single JSON object only. No markdown, no code fences.\n"
-    return (
-        f"{instruction}\n"
-        f"Channel: {channel_name}\n\n"
-        "Top viewed videos:\n"
-        f"{lines_from(top_videos)}\n\n"
-        "Latest videos:\n"
-        f"{lines_from(latest_videos)}\n\n"
-        "Thumbnails are attached as images when available. If thumbnails are missing, "
-        "focus on title patterns and note that thumbnail analysis is limited in caveats."
-    )
 
 
 def parse_json_from_text(text):
@@ -103,9 +67,11 @@ def collect_thumbnail_samples(videos, label_prefix, max_items=5, deadline=None):
     return samples
 
 
-def analyze_trends(channel_name, top_videos_raw, latest_videos_raw, top_videos_fmt, latest_videos_fmt):
+def analyze_trends(channel_name, top_videos_raw, latest_videos_raw, top_videos_fmt,
+                   latest_videos_fmt, metrics=None):
     budget = get_float("ANALYSIS_BUDGET_SECONDS", 20)
     deadline = time.monotonic() + max(budget, 5.0)
+    metrics_summary = summarize_metrics(metrics)
 
     max_thumbs_env = os.environ.get("ANALYSIS_THUMBNAILS_MAX")
     if max_thumbs_env is not None:
@@ -118,7 +84,8 @@ def analyze_trends(channel_name, top_videos_raw, latest_videos_raw, top_videos_f
 
     def run_once(sample_max, thumbs_per_group, strict=False):
         prompt = build_trends_prompt(
-            channel_name, top_videos_fmt, latest_videos_fmt, max_items=sample_max, strict=strict
+            channel_name, top_videos_fmt, latest_videos_fmt, max_items=sample_max,
+            strict=strict, metrics_summary=metrics_summary,
         )
         image_items = []
         image_items.extend(
@@ -176,5 +143,9 @@ def analyze_trends(channel_name, top_videos_raw, latest_videos_raw, top_videos_f
 
     parsed["titleTrends"] = normalize_list(parsed.get("titleTrends"))
     parsed["thumbnailTrends"] = normalize_list(parsed.get("thumbnailTrends"))
+    parsed["strategyTips"] = normalize_list(parsed.get("strategyTips"))
+    parsed["recommendedTags"] = normalize_list(parsed.get("recommendedTags"), max_items=15)
+    design = parsed.get("thumbnailDesign")
+    parsed["thumbnailDesign"] = design if isinstance(design, dict) else {}
     parsed["enabled"] = True
     return parsed
