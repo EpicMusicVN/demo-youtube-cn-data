@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EMVN YouTube Comment Fetcher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <header class="site-header">
+      <div class="brand">EMVN</div>
+      <div class="brand-subtitle">YouTube Comment Fetcher</div>
+    </header>
+
+    <main class="shell">
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>
+            Pull a video's comments.
+            <span>Ready for user &amp; AI analysis.</span>
+          </h1>
+          <p>
+            Paste a YouTube video link, choose how many comments to fetch, then
+            copy the whole thread as clean text for analysis.
+          </p>
+          <a class="link-btn" href="/secret">← Back to Competitor Inspector</a>
+        </div>
+        <div class="hero-panel">
+          <label for="video-input">Video URL or ID</label>
+          <div class="input-row">
+            <input
+              id="video-input"
+              type="text"
+              placeholder="https://www.youtube.com/watch?v=..."
+              autocomplete="off"
+            />
+            <button id="fetch-btn">Fetch</button>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="count-select">Comments</label>
+              <select id="count-select">
+                <option value="50">50</option>
+                <option value="100" selected>100</option>
+                <option value="200">200</option>
+                <option value="500">500</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="order-select">Sort by</label>
+              <select id="order-select">
+                <option value="relevance" selected>Top comments</option>
+                <option value="time">Newest first</option>
+              </select>
+            </div>
+          </div>
+          <div class="helper-row">
+            <span id="status-text">Ready.</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="results" class="results hidden">
+        <div class="card">
+          <div class="comment-toolbar">
+            <h3 id="comment-count">Comments</h3>
+            <button id="copy-btn" class="ghost">Copy to clipboard</button>
+          </div>
+          <div class="comment-box" id="comment-box"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      EMVN Data Lab • Comment intelligence.
+    </footer>
+
+    <script src="/static/comments.js"></script>
+  </body>
+</html>

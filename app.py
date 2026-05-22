@@ -5,6 +5,7 @@ import time
 from flask import Flask, jsonify, render_template, request
 
 from yt_inspector import inspect_channel, inspect_channel_lean
+from yt_inspector.comments import fetch_comments
 from yt_inspector.config import load_dotenv
 from yt_inspector import db
 
@@ -39,6 +40,12 @@ def secret():
     return render_template("secret.html")
 
 
+# Comment fetcher — reached via a button on the /secret page.
+@app.route("/comments")
+def comments_page():
+    return render_template("comments.html")
+
+
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
@@ -58,6 +65,20 @@ def api_inspect():
             result = inspect_channel_lean(target, enable_analysis=enable_analysis)
         else:
             result = inspect_channel(target, enable_analysis=enable_analysis)
+        return jsonify(result)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/api/comments")
+def api_comments():
+    target = request.args.get("url", "").strip()
+    max_results = request.args.get("max", "100").strip()
+    order = request.args.get("order", "relevance").strip().lower()
+    if not target:
+        return jsonify({"error": "Missing url parameter."}), 400
+    try:
+        result = fetch_comments(target, max_results=max_results, order=order)
         return jsonify(result)
     except RuntimeError as exc:
         return jsonify({"error": str(exc)}), 400
