@@ -298,6 +298,7 @@ def inspect_channel(target, enable_analysis=True):
     top_long = sort_by_views(unique_by_id(top_long_candidates))
 
     channel_data = _build_channel_dict(channel_id, channel)
+    competitor = compute_competitor_metrics(channel_data, latest_formatted)
     result = {
         "channel": channel_data,
         "topViewed": top_formatted[:output_max],
@@ -306,7 +307,7 @@ def inspect_channel(target, enable_analysis=True):
         "topViewedShort": top_short[:output_max],
         "latestLong": latest_long[:output_max],
         "latestShort": latest_short[:output_max],
-        "competitorAnalysis": compute_competitor_metrics(channel_data, latest_formatted),
+        "competitorAnalysis": competitor,
     }
 
     if enable_analysis and os.environ.get("VERTEX_API_KEY"):
@@ -317,6 +318,7 @@ def inspect_channel(target, enable_analysis=True):
                 latest_videos,
                 top_formatted,
                 latest_formatted,
+                metrics=competitor,
             )
         except RuntimeError as exc:
             result["analysis"] = {"enabled": False, "error": str(exc)}
@@ -357,9 +359,10 @@ def inspect_channel_lean(target, enable_analysis=True):
     latest_formatted = [format_video(v) for v in reorder_videos(latest_video_ids, latest_videos)]
 
     channel_data = _build_channel_dict(channel_id, channel)
+    competitor = compute_competitor_metrics(channel_data, latest_formatted)
     result = {
         "channel": channel_data,
-        "competitorAnalysis": compute_competitor_metrics(channel_data, latest_formatted),
+        "competitorAnalysis": competitor,
     }
 
     if enable_analysis and os.environ.get("VERTEX_API_KEY"):
@@ -371,6 +374,7 @@ def inspect_channel_lean(target, enable_analysis=True):
                 latest_videos,
                 [],
                 latest_formatted,
+                metrics=competitor,
             )
         except RuntimeError as exc:
             result["analysis"] = {"enabled": False, "error": str(exc)}

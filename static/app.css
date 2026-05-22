@@ -847,3 +847,26 @@ button.ghost {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* AI thumbnail-design breakdown */
+.detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.detail-item span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--emvn-gold);
+}
+
+.detail-item p {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--emvn-dark);
+}

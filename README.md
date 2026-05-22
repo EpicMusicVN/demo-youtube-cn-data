@@ -85,6 +85,11 @@ format (shorts ratio, duration trend, title formulas), engagement (like /
 comment / engagement rates, breakout & underperforming videos) and SEO
 intelligence (top tags, sponsor rate, revenue streams, paid placements).
 
+When `VERTEX_API_KEY` is set it also adds an AI section: structured
+thumbnail-design breakdown (characters, colours, art style, typography,
+branding), "how to compete" strategy tips, and recommended tags for a new
+channel — all grounded in the computed metrics.
+
 It calls `/api/inspect?lean=1`, which skips the costly top-viewed `/search`
 calls — roughly 11 quota units per channel. The same `competitorAnalysis`
 block is also included in the normal `/api/inspect` response.
