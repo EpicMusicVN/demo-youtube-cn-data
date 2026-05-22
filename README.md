@@ -76,7 +76,10 @@ Shorts detection:
 ## Secret competitor page
 
 A hidden competitor-analysis page is served at `/secret`. It is intentionally
-**not linked** from anywhere — reachable only by typing the path.
+**not linked** from anywhere, and is gated by an access code: visitors must
+enter the code (env `SECRET_ACCESS_CODE`) before the page — or its
+`/api/inspect?lean=1` endpoint — will respond. Set `SECRET_ACCESS_CODE` and
+`FLASK_SECRET_KEY` in `.env` for production.
 
 It clones the inspect feature (paste channel link → analyse) but drops the
 Top Viewed / Latest video grids. Instead it surfaces derived competitor
