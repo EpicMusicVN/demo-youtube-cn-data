@@ -2,9 +2,10 @@
 import os
 import time
 
-from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, jsonify, redirect, render_template, request, session
 
 from yt_inspector import inspect_channel, inspect_channel_lean
+from yt_inspector.comments import fetch_comments
 from yt_inspector.config import load_dotenv
 from yt_inspector import db
 
@@ -36,6 +37,25 @@ def _secret_access_code():
     return os.environ.get("SECRET_ACCESS_CODE", "83867979")
 
 
+def _gate(action_url):
+    """Shared access-code gate for the restricted pages.
+
+    Returns a response when the visitor is locked out (or just submitted the
+    unlock form), or ``None`` when access is granted and the caller may render.
+    ``action_url`` is the path the unlock form posts back to.
+    """
+    if request.method == "POST":
+        if request.form.get("code", "").strip() == _secret_access_code():
+            session["secret_unlocked"] = True
+            return redirect(action_url)
+        return render_template(
+            "secret_locked.html", error="Incorrect access code.", action_url=action_url
+        ), 401
+    if not session.get("secret_unlocked"):
+        return render_template("secret_locked.html", error=None, action_url=action_url)
+    return None
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -44,14 +64,15 @@ def index():
 # Hidden competitor-analysis page — gated by an access code, not linked anywhere.
 @app.route("/secret", methods=["GET", "POST"])
 def secret():
-    if request.method == "POST":
-        if request.form.get("code", "").strip() == _secret_access_code():
-            session["secret_unlocked"] = True
-            return redirect(url_for("secret"))
-        return render_template("secret_locked.html", error="Incorrect access code."), 401
-    if not session.get("secret_unlocked"):
-        return render_template("secret_locked.html", error=None)
-    return render_template("secret.html")
+    gate = _gate("/secret")
+    return gate if gate is not None else render_template("secret.html")
+
+
+# Comment fetcher — gated by the same access code as /secret.
+@app.route("/comments", methods=["GET", "POST"])
+def comments_page():
+    gate = _gate("/comments")
+    return gate if gate is not None else render_template("comments.html")
 
 
 @app.route("/health")
@@ -76,6 +97,23 @@ def api_inspect():
             result = inspect_channel_lean(target, enable_analysis=enable_analysis)
         else:
             result = inspect_channel(target, enable_analysis=enable_analysis)
+        return jsonify(result)
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/api/comments")
+def api_comments():
+    # The comment fetcher lives behind the same access gate as /secret.
+    if not session.get("secret_unlocked"):
+        return jsonify({"error": "Locked. Open /secret and enter the access code."}), 403
+    target = request.args.get("url", "").strip()
+    max_results = request.args.get("max", "100").strip()
+    order = request.args.get("order", "relevance").strip().lower()
+    if not target:
+        return jsonify({"error": "Missing url parameter."}), 400
+    try:
+        result = fetch_comments(target, max_results=max_results, order=order)
         return jsonify(result)
     except RuntimeError as exc:
         return jsonify({"error": str(exc)}), 400

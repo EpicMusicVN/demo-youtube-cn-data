@@ -97,6 +97,20 @@ It calls `/api/inspect?lean=1`, which skips the costly top-viewed `/search`
 calls — roughly 11 quota units per channel. The same `competitorAnalysis`
 block is also included in the normal `/api/inspect` response.
 
+## Comment fetcher page
+
+A comment fetcher is served at `/comments`, reachable via a button on the
+`/secret` page. It is gated by the same access code as `/secret` — the page
+and its `/api/comments` endpoint stay locked until the code is entered.
+Paste a video URL (or ID / Shorts link), pick how many comments to fetch
+(50–500) and a sort order, then read the thread in a fixed-height scrollable
+view or copy it as clean plain text for AI analysis.
+
+Top-level comments are returned with their inline replies (the API includes
+up to ~5 per thread; remaining replies are shown as a "+N more" note). The
+endpoint is `/api/comments?url=...&max=...&order=relevance|time` and costs
+1 quota unit per 100 comments.
+
 ## Nginx sample
 
 See `deployment/nginx/demo-youtube-data.emvn.co.conf`.
